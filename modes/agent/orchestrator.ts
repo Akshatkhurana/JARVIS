@@ -7,6 +7,7 @@ import { createAgentTools } from "./agent-tools";
 import { ToolLoopAgent, stepCountIs } from "ai";
 import { getAgentModel } from "../../ai";
 import { renderTerminalMarkdown } from "../../tui/terminal-md";
+import { runApprovvalFlow } from "./approval";
 
 export async function runAgentMode() {
     console.log(chalk.bold.green("\n🤖 Entering Agent Mode...\n"));
