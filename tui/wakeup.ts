@@ -37,6 +37,7 @@ import figlet from "figlet";
 import {select, isCancel} from "@clack/prompts";
 import { speak } from "..";
 import { runCliMode } from "../modes/cli";
+import { runTelegramMode } from "../modes/telegram/index";
 
 export async function runWakeup() {
     let ascii: string;
@@ -100,7 +101,7 @@ export async function runWakeup() {
     } else if (mode === "telegram") {
         console.log(chalk.green("Entering Telegram Mode..."));
         speak("Entering Telegram Mode.");
-        // await runTelegramMode();
+        await runTelegramMode();
     }
     else {
         console.log(chalk.red("Exiting..."));
