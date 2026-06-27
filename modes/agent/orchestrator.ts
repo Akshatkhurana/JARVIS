@@ -26,8 +26,8 @@ export async function runAgentMode() {
         model: getAgentModel(),
         stopWhen: stepCountIs(30),
         instructions: [
-            'Workspace root: ${config.codebasePath}',
-            `All mutations are staged until approval.`,
+            `Workspace root: ${config.codebasePath}`,
+            "All mutations are staged until approval.",
         ].join("\n"),
         tools,
     });
@@ -47,8 +47,10 @@ export async function runAgentMode() {
         console.log(renderTerminalMarkdown(result.text));
     }
 
+    const hadPending = tracker.getPendingMutations().length > 0;
     const ok = await runApprovvalFlow(tracker);
     if (!ok) return executor.clearStaging();
+    if (!hadPending) return;
 
     const errors = executor.applyApprovedFromTracker().errors;
     if (errors.length > 0) {

@@ -79,3 +79,9 @@ export function createWebTools(tracker: ActionTracker) {
     }),
   };
 }
+
+export function optionalWebTools(tracker: ActionTracker) {
+  return process.env.FIRECRAWL_API_KEY?.trim()
+    ? createWebTools(tracker)
+    : {};
+}

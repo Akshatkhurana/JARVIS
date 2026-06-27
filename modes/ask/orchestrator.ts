@@ -8,8 +8,7 @@ import { ToolExecutor } from '../agent/tool-executor';
 import { defaultAgentConfig } from '../agent/types';
 import { renderTerminalMarkdown } from '../../tui/terminal-md';
 import { runApprovvalFlow } from '../agent/approval.ts';
-import { log } from 'node:console';
-import { createWebTools } from '../plan/web-tools.ts';
+import { optionalWebTools } from '../plan/web-tools.ts';
 
 function createAskTools(executor: ToolExecutor) {
     return {
@@ -85,7 +84,7 @@ export async function runAskMode() {
     console.log(chalk.bold("\n❓ Ask Mode\n"));
     
     const questions = await text({
-        message: "What do you want to want",
+        message: "What would you like to ask?",
         placeholder: "E.g., 'What is inside my sample.txt file?'"
     });
 
@@ -104,8 +103,8 @@ export async function runAskMode() {
 
     const tools = {
         ...createAskTools(executor),
-        ...createWebTools(tracker )
-    }
+        ...optionalWebTools(tracker),
+    };
     const agent = new ToolLoopAgent({
         model: getAgentModel(),
         stopWhen: stepCountIs(25),
@@ -118,7 +117,7 @@ export async function runAskMode() {
     console.log("\n" + renderTerminalMarkdown(ans) + "\n");
 
     const wantsSave = await confirm({
-        message: "Save this answer to a .md file in the curent directory ?",
+        message: "Save this answer to a .md file in the current directory?",
         initialValue: false
     });
     if(isCancel(wantsSave) || !wantsSave) return;
@@ -137,10 +136,12 @@ export async function runAskMode() {
 
   executor.createFile(fileName, asMd(questions, ans));
 
+  const hadPending = tracker.getPendingMutations().length > 0;
   const ok = await runApprovvalFlow(tracker);
-  if(!ok) {
+  if (!ok) {
     return executor.clearStaging();
   }
+  if (!hadPending) return;
   executor.applyApprovedFromTracker();
   executor.clearStaging(); 
 }

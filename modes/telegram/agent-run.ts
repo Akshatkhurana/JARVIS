@@ -5,11 +5,10 @@ import { ActionTracker } from "../agent/action-tracker.ts";
 import { ToolExecutor } from "../agent/tool-executor.ts";
 import { createAgentTools } from "../agent/agent-tools.ts";
 import { defaultAgentConfig, type AgentConfig } from "../agent/types.ts";
-import { createWebTools } from "../plan/web-tools.ts";
+import { optionalWebTools } from "../plan/web-tools.ts";
 import type { Plan, PlanStep } from "../plan/types.ts";
 import { replyMd } from "./text.ts";
 import { finishOrApprove } from "./approval-session.ts";
-
 
 function readOnlyConfig(): AgentConfig {
     const c = defaultAgentConfig();
@@ -63,10 +62,6 @@ function createReadOnlyTools(executor: ToolExecutor) {
     };
 }
 
-function extraWebTools(tracker: ActionTracker) {
-    return process.env.FIRECRAWL_API_KEY ? createWebTools(tracker) : {};
-}
-
 export async function runAsk(ctx: {
     reply: (t: string, o?: object) =>
         Promise<unknown>
@@ -74,7 +69,7 @@ export async function runAsk(ctx: {
     const config = readOnlyConfig();
     const tracker = new ActionTracker();
     const executor = new ToolExecutor(tracker, config);
-    const tools = { ...createReadOnlyTools(executor), ...extraWebTools(tracker) };
+    const tools = { ...createReadOnlyTools(executor), ...optionalWebTools(tracker) };
     const agent = new ToolLoopAgent({
         ...agentOptions(config, 20),
         tools,
@@ -95,7 +90,7 @@ export async function runAgent(ctx: { reply: (t: string, o?: object) => Promise<
   });
   const { text } = await agent.generate({ prompt: goal });
   if (text?.trim()) await replyMd(ctx, text.trim());
- //await finishOrApprove(ctx, chatId, tracker, executor, '✅ Done. No file changes were needed.');
+  await finishOrApprove(ctx, chatId, tracker, executor, "✅ Done. No file changes were needed.");
 }
 
 export async function runPlanSteps(
@@ -107,7 +102,7 @@ export async function runPlanSteps(
   const config = defaultAgentConfig();
   const tracker = new ActionTracker();
   const executor = new ToolExecutor(tracker, config);
-  const tools = { ...createAgentTools(executor), ...extraWebTools(tracker) };
+  const tools = { ...createAgentTools(executor), ...optionalWebTools(tracker) };
 
   for (const step of steps) {
     await ctx.reply(`🔧 Executing: *${step.title}*`, { parse_mode: 'Markdown' });
@@ -120,5 +115,5 @@ export async function runPlanSteps(
     if (text?.trim()) await replyMd(ctx, text.trim());
   }
 
- //await finishOrApprove(ctx, chatId, tracker, executor, '✅ All steps done. No file changes needed.');
+  await finishOrApprove(ctx, chatId, tracker, executor, "✅ All steps done. No file changes needed.");
 }

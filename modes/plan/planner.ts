@@ -13,7 +13,7 @@ import { ActionTracker } from "../agent/action-tracker.ts";
 import { ToolExecutor } from "../agent/tool-executor.ts";
 import { defaultAgentConfig } from "../agent/types.ts";
 import type { Plan, PlanStep } from "./types.ts";
-import { createWebTools } from "./web-tools.ts";
+import { optionalWebTools } from "./web-tools.ts";
 
 const planSchema = z.object({
   researchSummary: z.string().optional(),
@@ -119,9 +119,9 @@ const PLAN_INSTRUCTIONS = (codebase: string, hasWeb: boolean) =>
         model: getAgentModel(),
         middleware: extractJsonMiddleware( )
     })
-    const tools = { 
+    const tools = {
         ...readOnlyTools(executor),
-        ...(hasWeb ? createWebTools(tracker) : {})
+        ...optionalWebTools(tracker),
     };
     console.log(chalk.cyan("\n🔍 Researching & drafting a plan…\n"));
 
@@ -130,12 +130,12 @@ const PLAN_INSTRUCTIONS = (codebase: string, hasWeb: boolean) =>
         tools,
         stopWhen: stepCountIs(20),
         system: PLAN_INSTRUCTIONS(config.codebasePath, hasWeb),
-        prompt: `User goal: \n{goal}`,
+        prompt: `User goal:\n${goal}`,
         output: Output.object({schema: planSchema})
     })
     const validate = planSchema.parse(result.output);
     const steps: PlanStep[] = validate.steps.map((s, i) => ({
-        id: `step - ${i+1}`,
+        id: `step-${i + 1}`,
         title: s.title,
         description: s.description,
         hints: s.hints,

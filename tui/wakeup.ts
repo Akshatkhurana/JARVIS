@@ -34,8 +34,9 @@
 
 import chalk from "chalk";
 import figlet from "figlet";
-import {select, isCancel} from "@clack/prompts";
-import { speak } from "..";
+import { select, isCancel } from "@clack/prompts";
+import { speak } from "../src/utils/speech";
+import { jarvisUserName } from "../src/config/env";
 import { runCliMode } from "../modes/cli";
 import { runTelegramMode } from "../modes/telegram/index";
 
@@ -81,7 +82,7 @@ export async function runWakeup() {
     console.log(
         chalk.hex("#A855F7")("Ready for commands...\n")
     );
-    speak("Welcome back Akshat, Systems are online, What can I do for you today?");
+    speak(`Welcome back ${jarvisUserName()}, systems are online. What can I do for you today?`);
     const mode = await select({
         message: "Choose your mode:",
         options: [
@@ -90,8 +91,8 @@ export async function runWakeup() {
             { value: "exit", label: "Exit" },
         ],
     });
-    if (isCancel(mode || mode === "exit")) {
-        console.log(chalk.red("No mode selected. Exiting..."));
+    if (isCancel(mode) || mode === "exit") {
+        console.log(chalk.red("Exiting..."));
         return;
     }
     if (mode === "cli") {

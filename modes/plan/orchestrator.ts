@@ -11,8 +11,7 @@ import { renderTerminalMarkdown } from "../../tui/terminal-md.ts";
 import { generatePlan } from "./planner.ts";
 import { printPlan, selectSteps } from "./selection.ts";
 import type { PlanStep } from "./types.ts";
-import { log } from "console";
-import { createWebTools } from "./web-tools.ts";
+import { optionalWebTools } from "./web-tools.ts";
 
 
 function stepPrompt(goal: string, step: PlanStep): string {
@@ -36,10 +35,11 @@ export async function runPlanMode(): Promise<void> {
   if(selected.length === 0) return;
 
   const proceed = await confirm({
-    message: `Execute ${selected.length} steps(s)`,
-    initialValue: true
+    message: `Execute ${selected.length} step(s)?`,
+    initialValue: true,
   });
-  
+  if (isCancel(proceed) || !proceed) return;
+
   const config = defaultAgentConfig();
   const tracker = new ActionTracker();
   const executor = new ToolExecutor(tracker, config);
@@ -47,8 +47,8 @@ export async function runPlanMode(): Promise<void> {
 
   const tools = {
     ...createAgentTools(executor),
-    ...createWebTools(tracker)
-  }
+    ...optionalWebTools(tracker),
+  };
   
   for(const step of selected) {
     console.log(chalk.bold(`\n🔧 ${step.title}\n`));
@@ -63,12 +63,15 @@ export async function runPlanMode(): Promise<void> {
         prompt: stepPrompt(plan.goal, step)
     });
 
-    if(r.text) {
-        return console.log(renderTerminalMarkdown(r.text));
+    if (r.text) {
+      console.log(renderTerminalMarkdown(r.text));
     }
   }
+
+  const hadPending = tracker.getPendingMutations().length > 0;
   const ok = await runApprovvalFlow(tracker);
-  if(!ok) return executor.clearStaging();
+  if (!ok) return executor.clearStaging();
+  if (!hadPending) return;
 
   const { errors } = executor.applyApprovedFromTracker();
   if (errors.length) {

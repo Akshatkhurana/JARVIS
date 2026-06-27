@@ -1,22 +1,25 @@
-const { Telegraf } = require("telegraf");
-import chalk from 'chalk';
-import { WELCOME } from './constants'
-import { registerHandlers } from './handlers';
+import { Telegraf } from "telegraf";
+import chalk from "chalk";
+import { requireTelegramEnv } from "../../src/config/env";
+import { WELCOME } from "./constants";
+import { registerHandlers } from "./handlers";
 
 export async function runTelegramMode() {
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    const owner_id = process.env.TELEGRAM_OWNER_ID;
+  requireTelegramEnv();
 
-    const bot = new Telegraf(token);
-    registerHandlers(bot);
+  const token = process.env.TELEGRAM_BOT_TOKEN!;
+  const ownerId = process.env.TELEGRAM_OWNER_ID!;
 
-    await bot.telegram.sendMessage(owner_id!, WELCOME, {parse_mode: "Markdown"})
-    console.log(chalk.green(`Sent welcome message to Telegram \n`));
+  const bot = new Telegraf(token);
+  registerHandlers(bot);
 
-    bot.launch();
-    console.log(chalk.green("Telegram bot is running. Press Ctrl+C to stop.\n"));
-    
-    await new Promise<void>((resolve) => {
+  await bot.telegram.sendMessage(ownerId, WELCOME, { parse_mode: "Markdown" });
+  console.log(chalk.green("Sent welcome message to Telegram\n"));
+
+  bot.launch();
+  console.log(chalk.green("Telegram bot is running. Press Ctrl+C to stop.\n"));
+
+  await new Promise<void>((resolve) => {
     const stop = () => {
       bot.stop("SIGINT");
       resolve();

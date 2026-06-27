@@ -65,8 +65,8 @@ function groupPending(pending: ActionLog[]): ReviewGroup[] {
 export async function runApprovvalFlow(tracker: ActionTracker): Promise<boolean> {
     const pending = tracker.getPendingMutations();
     if (pending.length === 0) {
-        console.log(chalk.bold.green("\nNo pending changes to review. Exiting approval flow.\n"));
-        return false;
+        console.log(chalk.bold.green("\n✓ Done — no file changes were staged.\n"));
+        return true;
     }
     const choice = await select({
         message: "Review and approve the proposed changes:",
@@ -77,10 +77,10 @@ export async function runApprovvalFlow(tracker: ActionTracker): Promise<boolean>
         ]
     });
     if (isCancel(choice) || choice === "cancel") {
-        for(const action of pending) {
+        for (const action of pending) {
             tracker.updateStatus(action.id, "rejected", false);
-            return false;
         }
+        return false;
     }
     if (choice === "all") {
         for(const action of pending) {
